@@ -256,11 +256,7 @@ size_t ZPageAllocator::soft_max_capacity() const {
 }
 
 void ZPageAllocator::adjust_soft_max_capacity(size_t size, bool adjust_soft_max) {
-  cout<<"#########"<<endl;
-  cout<<"in the ZPageAllocator File and soft heap size is:"<<size/ (1024 * 1024)<<" boolean value is: "<<adjust_soft_max<<endl;
-  cout<<"in the ZPageAllocator File and soft heap size is:"<<size<<endl;
   if (adjust_soft_max) {
-    cout<<"in the if condition"<<endl;
     Atomic::store(&SoftMaxHeapSize, size);
   }
 }

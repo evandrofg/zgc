@@ -2515,6 +2515,30 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (FLAG_SET_CMDLINE(MaxHeapSize, (size_t)long_max_heap_size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
+     // -Xgco
+    } else if (match_option(option, "-Xgco", &tail)) {
+      char* err;
+      int gc_overhead = (int)(strtod(tail, &err));
+      if (*err != '\0' || *tail == '\0') {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid GC overhead\n");
+        return JNI_EINVAL;
+      } else {
+      	if (FLAG_SET_CMDLINE(GCOverhead, gc_overhead) != JVMFlag::SUCCESS) {
+        	return JNI_EINVAL;
+      	}
+    }
+    // -XID2
+    } else if (match_option(option, "-XID2", &tail)) {
+      if (*tail == '\0') {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid GC overhead\n");
+        return JNI_EINVAL;
+      } else {
+      	if (FLAG_SET_CMDLINE(ID2, true) != JVMFlag::SUCCESS) {
+        	return JNI_EINVAL;
+      	}
+    }
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;
