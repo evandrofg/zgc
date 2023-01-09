@@ -22,7 +22,6 @@
  */
 #include <iostream>
 using namespace std;
-#include "gc/z/zPageAllocator.hpp"
 #include <sys/resource.h>
 
 #include "gc/shared/gcId.hpp"
@@ -426,7 +425,7 @@ void ZDriver::gc(const ZDriverRequest &request) {
                             (double)(usage.ru_stime.tv_sec +
                                      usage.ru_stime.tv_usec / (1000 * 1000));
     }
-    cout << "last User CPU time = " << last_user_cpu_usage << endl;
+    //cout << "last User CPU time = " << last_user_cpu_usage << endl;
   }
   int retval_end = getrusage(RUSAGE_SELF, &usage);
   double current_user_cpu_usage = 0;
@@ -435,7 +434,7 @@ void ZDriver::gc(const ZDriverRequest &request) {
                                       usage.ru_utime.tv_usec / (1000 * 1000)) +
                              (double)(usage.ru_stime.tv_sec +
                                       usage.ru_stime.tv_usec / (1000 * 1000));
-    cout << "Current User CPU time = = " << current_user_cpu_usage << endl;
+   // cout << "Current User CPU time = = " << current_user_cpu_usage << endl;
   }
 
   double user_app_cpu_usage = 0; // the CPU time spent in the user app between two GC calls
@@ -444,7 +443,7 @@ void ZDriver::gc(const ZDriverRequest &request) {
       current_user_cpu_usage; // set the last_user_cpu_usage to the current
                               // value for the next iteration
 
-  cout << "user's application CPU usage = " << user_app_cpu_usage << endl;
+  //cout << "user's application CPU usage = " << user_app_cpu_usage << endl;
 
   // Phase 1: Pause Mark Start
   pause_mark_start();
@@ -480,7 +479,7 @@ void ZDriver::gc(const ZDriverRequest &request) {
   concurrent(relocate);
 
   // current GC CPU time (seconds?)
-  cout << "******** START ********" << endl;
+  //cout << "******** START ********" << endl;
   constexpr double one_in_1000 = 3.290527;
   const double serial_gc_time = ZStatCycle::serial_time().davg() +
                                 (ZStatCycle::serial_time().dsd() * one_in_1000);
@@ -491,7 +490,7 @@ void ZDriver::gc(const ZDriverRequest &request) {
   // cout << "parallelizable_gc_time = " << parallelizable_gc_time << endl;
 
   const double gc_cpu = serial_gc_time + parallelizable_gc_time;
-  cout << "gc_cpu = " << gc_cpu << endl;
+  //cout << "gc_cpu = " << gc_cpu << endl;
 
   // outputStream* st;
   // st->print(" (********** GC CPU time: %d)", gc_cpu);
@@ -499,27 +498,26 @@ void ZDriver::gc(const ZDriverRequest &request) {
 
   double cpu_overhead = 2;
   //gc_to_app_cpu = CPU time used by GC devided by CPU time for user's application
-  double gc_to_app_cpu = user_app_cpu_usage > 0 ? gc_cpu / user_app_cpu_usage : 0;
-  cout << "gc_to_app_cpu is: " << gc_to_app_cpu << endl;
+  double gc_to_app_cpu = user_app_cpu_usage > 0 ? gc_cpu / (user_app_cpu_usage - gc_cpu) : 0;
+  //cout << "gc_to_app_cpu is: " << gc_to_app_cpu << endl;
   if (gc_to_app_cpu > 0) {
     double new_heap_size = 0.0;
     // current soft heap size
     // look for SoftMaxHeapSize
     double soft_heap = (double)ZHeap::heap()->soft_max_capacity(); // in Byte?
-    cout << "soft heap size = " << soft_heap / (1024 * 1024) << endl;
+   // cout << "soft heap size = " << soft_heap / (1024 * 1024) << endl;
     if (gc_to_app_cpu < cpu_overhead) {
       new_heap_size = (double)soft_heap / 2;
-      cout << "decrease HEAP size:" << new_heap_size << endl;
+     // cout << "decrease HEAP size:" << new_heap_size << endl;
     } else if (gc_to_app_cpu >= cpu_overhead) {
       new_heap_size = soft_heap + (soft_heap / 2);
-      cout << "increase HEAP size" << new_heap_size << endl;
+    //  cout << "increase HEAP size" << new_heap_size << endl;
     }
     ZHeap::heap()->adjust_soft_heap(new_heap_size, true);
-    double so_heap = ZHeap::heap()->soft_max_capacity(); // in Byte?
-    cout << "new soft heap size = " << so_heap << endl;
+    //cout << "new soft heap size = " << so_heap << endl;
   }
 
-  cout << "******** END ********" << endl;
+ // cout << "******** END ********" << endl;
 }
 
 void ZDriver::run_service() {
