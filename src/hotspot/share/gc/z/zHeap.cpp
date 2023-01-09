@@ -97,8 +97,6 @@ size_t ZHeap::soft_max_capacity() const {
 }
 
 void ZHeap::adjust_soft_heap(size_t size,bool b) {
-  //cout<<"in the Zheap File and soft heap size is:"<<size/ (1024 * 1024)<<endl;
-  //cout<<"in the Zheap File and soft heap size is:"<<size<<endl;
   _page_allocator.adjust_soft_max_capacity(size, b);
 }
 

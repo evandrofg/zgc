@@ -43,6 +43,7 @@ using namespace std;
 #include "runtime/threads.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 double last_user_cpu_usage = 0;
 static const ZStatPhaseCycle ZPhaseCycle("Garbage Collection Cycle");
@@ -479,7 +480,6 @@ void ZDriver::gc(const ZDriverRequest &request) {
   concurrent(relocate);
 
   // current GC CPU time (seconds?)
-  //cout << "******** START ********" << endl;
   constexpr double one_in_1000 = 3.290527;
   const double serial_gc_time = ZStatCycle::serial_time().davg() +
                                 (ZStatCycle::serial_time().dsd() * one_in_1000);
@@ -492,32 +492,33 @@ void ZDriver::gc(const ZDriverRequest &request) {
   const double gc_cpu = serial_gc_time + parallelizable_gc_time;
   //cout << "gc_cpu = " << gc_cpu << endl;
 
-  // outputStream* st;
-  // st->print(" (********** GC CPU time: %d)", gc_cpu);
-  //  st->print(" (********** GC CPU time: %s)", "hHHHHHHHHHH");
+  //cout << "user's application CPU usage = " << user_app_cpu_usage << endl;
 
-  double cpu_overhead = 2;
   //gc_to_app_cpu = CPU time used by GC devided by CPU time for user's application
-  double gc_to_app_cpu = user_app_cpu_usage > 0 ? gc_cpu / (user_app_cpu_usage - gc_cpu) : 0;
+  double gc_to_app_cpu = user_app_cpu_usage > 0 ? gc_cpu / (user_app_cpu_usage - gc_cpu) * 100: 0;
   //cout << "gc_to_app_cpu is: " << gc_to_app_cpu << endl;
   if (gc_to_app_cpu > 0) {
     double new_heap_size = 0.0;
-    // current soft heap size
-    // look for SoftMaxHeapSize
     double soft_heap = (double)ZHeap::heap()->soft_max_capacity(); // in Byte?
-   // cout << "soft heap size = " << soft_heap / (1024 * 1024) << endl;
-    if (gc_to_app_cpu < cpu_overhead) {
-      new_heap_size = (double)soft_heap / 2;
-     // cout << "decrease HEAP size:" << new_heap_size << endl;
-    } else if (gc_to_app_cpu >= cpu_overhead) {
+   if (ID2 == true){
+    	// current soft heap size
+    	// look for SoftMaxHeapSize
+      if (gc_to_app_cpu < GCOverhead) {
+        new_heap_size = (double)soft_heap / 2;
+        // cout << "decrease HEAP size:" << new_heap_size << endl;
+      } else if (gc_to_app_cpu >= GCOverhead) {
       new_heap_size = soft_heap + (soft_heap / 2);
     //  cout << "increase HEAP size" << new_heap_size << endl;
+      }
+      ZHeap::heap()->adjust_soft_heap(new_heap_size, true);
+    }else {
+    	new_heap_size = soft_heap * (gc_to_app_cpu/GCOverhead);
+    	ZHeap::heap()->adjust_soft_heap(new_heap_size, true);
     }
-    ZHeap::heap()->adjust_soft_heap(new_heap_size, true);
     //cout << "new soft heap size = " << so_heap << endl;
   }
+  log_info(gc)("Soft Max Capacity: %zu", ZHeap::heap()->soft_max_capacity()/(1024*1024));
 
- // cout << "******** END ********" << endl;
 }
 
 void ZDriver::run_service() {
