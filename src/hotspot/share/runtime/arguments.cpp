@@ -1628,7 +1628,8 @@ void Arguments::set_heap_size() {
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
       !FLAG_IS_DEFAULT(MaxRAMFraction))
-    MaxRAMPercentage = 100.0 / MaxRAMFraction;
+    //MaxRAMPercentage = 100.0 / MaxRAMFraction;
+    MaxRAMPercentage = 75.0;
 
   if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
       !FLAG_IS_DEFAULT(MinRAMFraction))
