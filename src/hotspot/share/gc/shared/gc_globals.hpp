@@ -324,7 +324,7 @@
           "Deprecated, use InitialRAMPercentage instead")                   \
           range(1, max_uintx)                                               \
                                                                             \
-  product(double, MaxRAMPercentage, 25.0,                                   \
+  product(double, MaxRAMPercentage, 75.0,                                   \
           "Maximum percentage of real memory used for maximum heap size")   \
           range(0.0, 100.0)                                                 \
                                                                             \
