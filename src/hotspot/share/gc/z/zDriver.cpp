@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,6 @@ bool ZDriver::is_busy() const { return _gc_cycle_port.is_busy(); }
 void ZDriver::collect(const ZDriverRequest &request) {
   switch (request.cause()) {
   case GCCause::_wb_young_gc:
-  case GCCause::_wb_conc_mark:
   case GCCause::_wb_full_gc:
   case GCCause::_dcmd_gc_run:
   case GCCause::_java_lang_system_gc:
