@@ -20,9 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <iostream>
-using namespace std;
-
 #include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"

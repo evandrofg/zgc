@@ -20,8 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <iostream>
-using namespace std;
 #include <sys/resource.h>
 
 #include "gc/shared/gcId.hpp"
