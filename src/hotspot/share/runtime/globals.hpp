@@ -1448,9 +1448,11 @@ const int ObjectAlignmentInBytes = 8;
   product(uintx, GCOverhead, 10,                                            \
           "The maximum percentage of CPU that can be givven to GC")         \
           range(0, 100)                                                     \
-  product(bool, ID2, false,                                            \
+  product(bool, ID2, false,                                                 \
           "GC will decrease and increase a soft heap size by 2 when fixed"  \
-	  "GCOverhead"	  ) 						    \
+	  "GCOverhead"	  )                                                 \
+  product(bool, MemBalancer, false,                                                \
+          "ZGC will use MemBalancer to set max heap size")  		    \
                                                                             \
   product(bool, ShrinkHeapInSteps, true,                                    \
           "When disabled, informs the GC to shrink the java heap directly"  \

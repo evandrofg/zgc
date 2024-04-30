@@ -2536,6 +2536,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         	return JNI_EINVAL;
       	}
     }
+    // Xmemb
+    } else if (match_option(option, "-Xmemb")) {
+      if (FLAG_SET_CMDLINE(MemBalancer, true) != JVMFlag::SUCCESS) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Did not enable MemBalancer\n");
+        return JNI_EINVAL;
+      } else {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Enabled MemBalancer\n");
+        } 
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;

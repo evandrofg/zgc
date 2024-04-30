@@ -44,6 +44,14 @@
 #include "runtime/vmThread.hpp"
 
 double last_user_cpu_usage = 0;
+size_t live_memory = 0;
+size_t sm_bytes_collected = 0;
+double st_collection_duration = 0;
+size_t gm_memory_allocated = 0;
+size_t gm_memory_allocated_begin = 0;
+size_t gm_memory_allocated_previous = 0;
+double gt_time_since_hearbeat = 0;
+
 static const ZStatPhaseCycle ZPhaseCycle("Garbage Collection Cycle");
 static const ZStatPhasePause ZPhasePauseMarkStart("Pause Mark Start");
 static const ZStatPhaseConcurrent ZPhaseConcurrentMark("Concurrent Mark");
@@ -510,10 +518,55 @@ void ZDriver::gc(const ZDriverRequest &request) {
       new_heap_size = soft_heap * (gc_to_app_cpu / GCOverhead);
       ZHeap::heap()->adjust_soft_heap(new_heap_size, true);
     }
+    log_info(gc)("Gco limit %f", new_heap_size);
     // cout << "new soft heap size = " << so_heap << endl;
   }
-  log_info(gc)("Soft Max Capacity: %zu",
-               ZHeap::heap()->soft_max_capacity() / (1024 * 1024));
+  log_info(gc)("Soft max capacity : %zu",
+                ZHeap::heap()->soft_max_capacity() / (1024 * 1024));
+  
+  // implement soft heap size adjustment based on memory balancer
+  if (MemBalancer) {
+    log_info(gc)("MemBalancer is : %s", MemBalancer ? "ON" : "OFF");
+
+    // implement soft heap size adjustment based on memory balancer
+    live_memory = ZStatHeap::used_at_relocate_end();
+
+    const size_t used_start = ZStatHeap::used_at_mark_start();
+    const size_t used_end = ZStatHeap::used_at_relocate_end();
+    sm_bytes_collected = used_start - used_end;
+    st_collection_duration = gc_cpu;
+    
+    gm_memory_allocated_begin = used_start;
+    log_info(gc)("DEBUG: start: %zu, end: %zu", used_start, used_end);
+    gm_memory_allocated = used_start - used_end;
+    
+    gt_time_since_hearbeat = ZStatCycle::time_since_last();
+
+    // log_info(gc)("Live memory: %zu bytes, sm bytes collected: %zu, st Collection duration: %f ms, gm Memory allocated since last GC: %zu bytes, gt Time since last heartbeat: %f ms",
+    //            live_memory, sm_bytes_collected, st_collection_duration, gm_memory_allocated, gt_time_since_hearbeat);
+
+    log_info(gc)("Live memory: %f MB, sm bytes collected: %f MB, st Collection duration: %f ms, gm Memory allocated since last GC: %f MB, gt Time since last heartbeat: %f ms",
+              live_memory / (1024.0 * 1024.0),
+              sm_bytes_collected / (1024.0 * 1024.0),
+              st_collection_duration,
+              gm_memory_allocated / (1024.0 * 1024.0),
+              gt_time_since_hearbeat);
+    
+    float c_value = 3e-10;
+    size_t new_limit = sqrt(live_memory * ( gm_memory_allocated / gt_time_since_hearbeat) / (sm_bytes_collected / st_collection_duration) / c_value);
+    log_info(gc)("New limit: %zu", new_limit);
+    log_info(gc)("Old limit: %zu", ZHeap::heap()->soft_max_capacity() / (1024 * 1024) );
+
+    if (new_limit > 0)
+      ZHeap::heap()->adjust_soft_heap(new_limit, true);
+
+    log_info(gc)("Soft max capacity after MemBalancer: %zu",
+                ZHeap::heap()->soft_max_capacity() / (1024 * 1024));
+    
+    // update variables for next round
+    gm_memory_allocated_previous = used_end;
+  }
+  log_info(gc)("MemBalancer: %s, ID2: %s", MemBalancer ? "true" : "false", ID2 ? "true" : "false");
 }
 
 void ZDriver::run_service() {
