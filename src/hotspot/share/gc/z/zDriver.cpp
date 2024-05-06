@@ -502,7 +502,8 @@ void ZDriver::gc(const ZDriverRequest &request) {
                           : gc_cpu / user_app_cpu_usage * 100)
           : 0;
   // cout << "gc_to_app_cpu is: " << gc_to_app_cpu << endl;
-  if (gc_to_app_cpu > 0) {
+  log_info(gc)("GC to App CPU: %f , %lu", gc_to_app_cpu, GCOverhead);
+  if (gc_to_app_cpu > 0 && GCOverhead > 0) {
     double new_heap_size = 0.0;
     double soft_heap = (double)ZHeap::heap()->soft_max_capacity(); // in Byte?
     if (ID2 == true) {
