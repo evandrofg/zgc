@@ -1,17 +1,13 @@
 import matplotlib.pyplot as plt
 import sys
 import re
+import os
 
-# Function to read and parse GC log data, capturing the time in seconds
-def parse_gc_log_data(file_path, log_type):
+# Function to determine and parse GC log data using appropriate patterns
+def parse_gc_log_data(file_path):
     times = []  # To hold the time stamps in seconds
     soft_max_capacities = []
-    if log_type == "gco":
-        pattern = re.compile(r'\[(\d+\.\d+)s\].*GC\(\d+\) Soft max capacity : (\d+)', re.IGNORECASE)
-    elif log_type == "memb":
-        pattern = re.compile(r'\[(\d+\.\d+)s\].*GC\(\d+\) Soft max capacity after MemBalancer: (\d+)', re.IGNORECASE)
-    else:
-        raise ValueError("Invalid log type. Use 'gco' for general GC logs or 'memb' for MemBalancer logs.")
+    pattern = re.compile(r'\[(\d+\.\d+)s\].*GC\(\d+\) Soft Max Capacity: (\d+)M', re.IGNORECASE)
     
     with open(file_path, 'r') as file:
         for line in file:
@@ -35,30 +31,79 @@ def parse_cpu_log_data(file_path):
     return times, cpu_usages
 
 # Function to plot the data with time on the x-axis
-def plot_data(times, data, title, y_label):
+def plot_data(gc_times_data, gc_capacities_data, cpu_times_data, cpu_usages_data, benchmark_name, save_plots, log_dir):
+    # Plotting GC data
     plt.figure(figsize=(12, 7))
-    plt.plot(times, data, marker='o', linestyle='-', color='b')
-    plt.title(title)
+    for times, capacities, label in zip(gc_times_data, gc_capacities_data, labels):
+        plt.plot(times, capacities, marker='o', linestyle='-', label=f"{label} GC", linewidth=1.0)
+    plt.title(f'Soft Max Capacity Change Over Time for {benchmark_name}')
     plt.xlabel('Time in Seconds')
-    plt.ylabel(y_label)
+    plt.ylabel('Soft Max Capacity')
+    plt.legend()
     plt.grid(True)
-    plt.show()
+    if save_plots:
+        plot_file = os.path.join(log_dir, 'plots', f'{benchmark_name}_gc.png')
+        plt.savefig(plot_file)
+        print(f"Plot saved to {plot_file}")
+    else:
+        plt.show()
+
+    # Plotting CPU data
+    plt.figure(figsize=(12, 7))
+    for times, usages, label in zip(cpu_times_data, cpu_usages_data, labels):
+        plt.plot(times, usages, marker='o', linestyle='-', label=f"{label} CPU", linewidth=1.0)
+    plt.title(f'CPU Usage Over Time for {benchmark_name}')
+    plt.xlabel('Time in Seconds')
+    plt.ylabel('CPU Usage (%)')
+    plt.legend()
+    plt.grid(True)
+    if save_plots:
+        plot_file = os.path.join(log_dir, 'plots', f'{benchmark_name}_cpu.png')
+        plt.savefig(plot_file)
+        print(f"Plot saved to {plot_file}")
+    else:
+        plt.show()
 
 # Main script execution
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python plot_data.py <gc|cpu> <path_to_log_file>")
+    if len(sys.argv) < 3:
+        print("Usage: python plot_data.py <benchmark_name> <path_to_log_dir> <save_plots>")
         sys.exit(1)
     
-    option = sys.argv[1]
-    file_path = sys.argv[2]  # Take the log file path from command line argument
+    benchmark_name = sys.argv[1]
+    log_dir = sys.argv[2]
+    save_plots = len(sys.argv) >= 4 and sys.argv[3].lower() == 'true'
     
-    if option in ["gco", "memb"]:
-        times, soft_max_capacities = parse_gc_log_data(file_path, option)
-        plot_data(times, soft_max_capacities, 'Soft Max Capacity Change Over Time', 'Soft Max Capacity')
-    elif option == "cpu":
-        times, cpu_usages = parse_cpu_log_data(file_path)
-        plot_data(times, cpu_usages, 'CPU Usage Over Time', 'CPU Usage (%)')
+    plots_dir = os.path.join(log_dir, 'plots')
+    if save_plots and not os.path.exists(plots_dir):
+        os.makedirs(plots_dir)
+
+    labels = ['memb', 'gco20', 'gco2', 'zgc']
+    #labels = ['zgc']
+    gc_times_data = []
+    gc_capacities_data = []
+    cpu_times_data = []
+    cpu_usages_data = []
+
+    for label in labels:
+        gc_file_path = os.path.join(log_dir, f"{label}-{benchmark_name}-log-gc.log")
+        cpu_file_path = os.path.join(log_dir, f"{label}-{benchmark_name}-cpu-usage.log")
+        
+        if os.path.exists(gc_file_path):
+            times, capacities = parse_gc_log_data(gc_file_path)
+            gc_times_data.append(times)
+            gc_capacities_data.append(capacities)
+        else:
+            print(f"No GC log file found for {label}")
+
+        if os.path.exists(cpu_file_path):
+            times, usages = parse_cpu_log_data(cpu_file_path)
+            cpu_times_data.append(times)
+            cpu_usages_data.append(usages)
+        else:
+            print(f"No CPU log file found for {label}")
+
+    if gc_times_data and cpu_times_data:
+        plot_data(gc_times_data, gc_capacities_data, cpu_times_data, cpu_usages_data, benchmark_name, save_plots, log_dir)
     else:
-        print("Invalid option. Use 'gc', 'gco', 'memb' for GC data or 'cpu' for CPU usage data.")
-        sys.exit(1)
+        print("No valid data to plot.")
