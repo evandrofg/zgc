@@ -33,4 +33,4 @@ USER 185
 # ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
 # Set default command to /bin/bash
-CMD ["sh", "-c", "cd /opt/zgc && python3 run-benchmarks.py"]
+CMD ["/bin/bash"]

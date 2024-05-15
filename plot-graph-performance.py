@@ -52,16 +52,15 @@ def plot_combined_latency_data(all_labels, all_values, all_titles, save_plots, r
 
 # Main script execution
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage: python plot_latency.py <benchmark_name> <path_to_results_dir> <save_plots>")
+    if len(sys.argv) < 3:
+        print("Usage: python plot_latency.py <path_to_results_dir> <save_plots>")
         sys.exit(1)
     
-    benchmark_name = sys.argv[1]
-    results_dir = sys.argv[2]
-    save_plots = sys.argv[3].lower() == 'true'
+    results_dir = sys.argv[1]
+    save_plots = sys.argv[2].lower() == 'true'
     plots_dir = os.path.join(results_dir, 'plots')
 
-    if save_plots and not os.path.exists(results_dir):
+    if save_plots and not os.path.exists(plots_dir):
         os.makedirs(plots_dir)
 
     all_files = os.listdir(results_dir)
@@ -70,13 +69,15 @@ if __name__ == "__main__":
     all_titles = []
 
     for file_name in all_files:
-        if "log" in file_name and benchmark_name in file_name:
+        if "log" in file_name:
             full_path = os.path.join(results_dir, file_name)
             labels, values = parse_latency_data_from_file(full_path)
             if labels and values:
                 all_labels.append(labels)
                 all_values.append(values)
-                all_titles.append(file_name.replace('.log', ''))
+                # Extract benchmark name and instance from the file name
+                benchmark_name = '-'.join(file_name.split('-')[:-1])
+                all_titles.append(benchmark_name)
 
     if all_labels and all_values:
         plot_combined_latency_data(all_labels, all_values, all_titles, save_plots, results_dir)

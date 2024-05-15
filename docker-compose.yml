@@ -3,7 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    tty: true
+    stdin_open: true
     volumes:
       - ./:/opt/zgc
       - ../dacapo-23.11-chopin:/opt/dacapo-23.11-chopin
-    mem_limit: 8g
+    mem_limit: 2g
